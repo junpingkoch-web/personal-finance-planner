@@ -37,8 +37,7 @@
   .hero-top-row{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;}
   h1{font-size:clamp(26px,4vw,38px);margin:0;font-weight:800;letter-spacing:-.01em;line-height:1.15;}
   .sub{color:var(--sub);font-size:13.5px;line-height:1.7;max-width:640px;margin-top:10px;}
-  .hero-chips-row{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-top:16px;}
-  .chips{display:flex;flex-wrap:wrap;gap:8px;}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;}
   .chip{
     display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;
     padding:6px 13px;border-radius:999px;color:#fff;
@@ -49,8 +48,7 @@
   .currency-bar{
     display:flex;align-items:center;gap:8px;margin-top:20px;font-size:12px;font-weight:600;color:var(--sub);
   }
-  .currency-bar select{width:auto;min-width:200px;font-weight:700;color:var(--ink);background:#fff;}
-  .inline-currency{margin-top:0;}
+  .currency-bar select{width:auto;min-width:160px;font-weight:700;color:var(--ink);background:#fff;}
   .period-bar{flex-wrap:wrap;}
   .period-bar select{width:auto;min-width:0;}
 
@@ -132,17 +130,13 @@
       </div>
     </div>
     <div class="sub" data-i18n="subtitle"></div>
-    <div class="hero-chips-row">
-      <div class="chips">
-        <span class="chip c-orange" data-i18n="chipPrivate"></span>
-        <span class="chip c-green" data-i18n="chipNoAccount"></span>
-      </div>
-      <div class="currency-bar inline-currency">
-        <span data-i18n="currencyLabel"></span>
-        <select id="currency-select" onchange="setCurrency(this.value)"></select>
-      </div>
+    <div class="chips">
+      <span class="chip c-orange" data-i18n="chipPrivate"></span>
+      <span class="chip c-green" data-i18n="chipNoAccount"></span>
     </div>
     <div class="currency-bar period-bar">
+      <span data-i18n="currencyLabel"></span>
+      <select id="currency-select" onchange="setCurrency(this.value)"></select>
       <span data-i18n="planningPeriod"></span>
       <select id="period-type-select" onchange="onPeriodTypeChange()"></select>
       <select id="period-year-select" onchange="onPeriodFieldChange()"></select>
