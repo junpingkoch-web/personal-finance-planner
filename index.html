@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Personal Finance Planner · 个人财务规划表 · Finanzplaner</title>
+<style>
+  :root{
+    --bg:#fdf4e3; --card:#ffffff; --ink:#1a2140; --sub:#6b6a85;
+    --line:#ece3cf; --accent:#6f5cff; --ok:#1a9e63; --warn:#d97706; --bad:#dc2626;
+    --orange:#ff7a45; --purple:#6f5cff; --green:#1fb88f; --blue:#3fa1ff; --yellow:#ffc94a;
+    --radius:16px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:-apple-system,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--ink);}
+
+  header{
+    position:relative;overflow:hidden;
+    padding:46px 20px 40px;
+    background:
+      radial-gradient(circle at 92% 18%, rgba(63,161,255,.22) 0, rgba(63,161,255,0) 55%),
+      radial-gradient(circle at 6% 85%, rgba(111,92,255,.20) 0, rgba(111,92,255,0) 50%),
+      linear-gradient(180deg,#fff6e3 0%, #fdf4e3 100%);
+    border-bottom:1px solid var(--line);
+  }
+  header::before, header::after{
+    content:"";position:absolute;border-radius:50%;opacity:.55;pointer-events:none;
+  }
+  header::before{width:120px;height:120px;background:var(--yellow);top:-40px;right:12%;}
+  header::after{width:70px;height:70px;background:var(--orange);bottom:-18px;right:28%;opacity:.4;}
+  .hero-dots{
+    position:absolute;top:22px;left:24px;width:60px;height:36px;
+    background-image:radial-gradient(var(--purple) 2px, transparent 2.2px);
+    background-size:12px 12px;opacity:.35;pointer-events:none;
+  }
+  .hero-wrap{max-width:1080px;margin:0 auto;position:relative;}
+  h1{font-size:clamp(26px,4vw,38px);margin:0 0 10px;font-weight:800;letter-spacing:-.01em;line-height:1.15;}
+  .sub{color:var(--sub);font-size:13.5px;line-height:1.7;max-width:640px;}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;}
+  .chip{
+    display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;
+    padding:6px 13px;border-radius:999px;color:#fff;
+  }
+  .chip.c-purple{background:var(--purple);}
+  .chip.c-orange{background:var(--orange);}
+  .chip.c-green{background:var(--green);}
+  .currency-bar{
+    display:flex;align-items:center;gap:8px;margin-top:20px;font-size:12px;font-weight:600;color:var(--sub);
+  }
+  .currency-bar select{width:auto;min-width:200px;font-weight:700;color:var(--ink);background:#fff;}
+
+  .lang-switch{display:inline-flex;gap:4px;background:#fff;border-radius:999px;padding:4px;box-shadow:0 1px 4px rgba(26,33,64,.08);}
+  .lang-btn{background:none;color:var(--sub);font-size:12px;font-weight:700;padding:6px 14px;border-radius:999px;}
+  .lang-btn:hover{background:#f1eeff;}
+  .lang-btn.active{background:var(--purple);color:#fff;}
+
+  main{max-width:1080px;margin:0 auto;padding:28px 20px 60px;display:grid;gap:22px;}
+  section{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:20px 22px;box-shadow:0 2px 10px rgba(26,33,64,.04);}
+  section .h2-row{display:flex;align-items:center;gap:10px;margin-bottom:4px;}
+  .icon-badge{
+    width:30px;height:30px;border-radius:10px;display:flex;align-items:center;justify-content:center;
+    font-size:15px;color:#fff;flex-shrink:0;
+  }
+  .icon-badge.i-purple{background:var(--purple);}
+  .icon-badge.i-orange{background:var(--orange);}
+  .icon-badge.i-green{background:var(--green);}
+  section h2{font-size:16px;margin:0;font-weight:800;}
+  section .hint{color:var(--sub);font-size:12px;margin:6px 0 14px;}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th,td{text-align:left;padding:9px 6px;border-bottom:1px solid var(--line);vertical-align:middle;}
+  th{color:var(--sub);font-weight:700;font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;}
+  tr.sample td{color:#aaa9c0;}
+  .tag-sample{font-size:10px;background:#f1eeff;color:#9b95c9;padding:1px 6px;border-radius:6px;margin-left:6px;font-weight:700;}
+  input, select{font:inherit;padding:7px 9px;border:1px solid var(--line);border-radius:9px;background:#fffdf8;color:var(--ink);width:100%;}
+  input:focus, select:focus{outline:2px solid var(--purple);outline-offset:1px;}
+  .row-form{display:grid;gap:8px;margin-top:12px;grid-template-columns:repeat(6,1fr) auto;align-items:end;}
+  .row-form label{font-size:11px;color:var(--sub);display:block;margin-bottom:3px;font-weight:600;}
+  button{font:inherit;cursor:pointer;border:none;border-radius:10px;padding:9px 16px;background:var(--purple);color:#fff;font-weight:700;}
+  button:hover{filter:brightness(1.07);}
+  button.ghost{background:transparent;color:var(--sub);border:1px solid var(--line);padding:4px 8px;font-weight:500;font-size:12px;}
+  .del{background:transparent;color:var(--bad);border:none;cursor:pointer;font-size:14px;}
+  .bar-wrap{background:#f0ecff;border-radius:6px;height:8px;width:120px;overflow:hidden;}
+  .bar{height:100%;border-radius:6px;}
+  .status{font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;}
+  .status.ok{color:var(--ok);background:#e3f8ef;}
+  .status.warn{color:var(--warn);background:#fff1de;}
+  .status.bad{color:var(--bad);background:#fde7e7;}
+  .goal-card{display:grid;grid-template-columns:1fr auto;gap:4px 14px;padding:12px 0;border-bottom:1px solid var(--line);}
+  .goal-card:last-child{border-bottom:none;}
+  .goal-title{font-weight:700;font-size:14px;}
+  .goal-meta{color:var(--sub);font-size:12px;}
+  .cat-form, .goal-form{display:grid;gap:8px;margin-top:12px;grid-template-columns:repeat(4,1fr) auto;align-items:end;}
+  .footer-note{color:var(--sub);font-size:11px;text-align:center;margin-top:10px;}
+  .reset-link{color:var(--bad);cursor:pointer;text-decoration:underline;font-size:11px;}
+
+  .show-more-row{margin-top:12px;text-align:center;}
+  .show-more-btn{background:none;border:1px solid var(--line);color:var(--purple);font-weight:700;font-size:12.5px;padding:7px 16px;border-radius:999px;}
+  .show-more-btn:hover{background:#f6f3ff;}
+
+  @media (max-width: 640px){
+    main{padding:0;gap:0;}
+    .main-section{
+      min-height:100dvh;
+      border-radius:0;
+      border-left:none;border-right:none;border-top:none;
+      display:flex;flex-direction:column;justify-content:flex-start;
+      padding:26px 16px 32px;
+      scroll-snap-align:start;
+      scroll-snap-stop:always;
+    }
+    main{scroll-snap-type:y proximity;}
+    table{display:block;overflow-x:auto;white-space:nowrap;}
+    .goal-form, .cat-form, .row-form{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="hero-dots"></div>
+  <div class="hero-wrap">
+    <div class="lang-switch" id="lang-switch">
+      <button class="lang-btn" data-lang="en" onclick="setLang('en')">EN</button>
+      <button class="lang-btn" data-lang="zh" onclick="setLang('zh')">中文</button>
+      <button class="lang-btn" data-lang="de" onclick="setLang('de')">DE</button>
+    </div>
+    <h1 data-i18n="title" style="margin-top:14px;"></h1>
+    <div class="sub" data-i18n="subtitle"></div>
+    <div class="chips">
+      <span class="chip c-orange" data-i18n="chipPrivate"></span>
+      <span class="chip c-green" data-i18n="chipNoAccount"></span>
+    </div>
+    <div class="currency-bar">
+      <span data-i18n="currencyLabel"></span>
+      <select id="currency-select" onchange="setCurrency(this.value)"></select>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <section id="goals-section" class="main-section">
+    <div class="h2-row"><span class="icon-badge i-purple">🎯</span><h2 data-i18n="goalsTitle"></h2></div>
+    <div class="hint" data-i18n="goalsHint"></div>
+    <div id="goals-list"></div>
+    <div id="goals-showmore" class="show-more-row"></div>
+    <div class="goal-form">
+      <div><label data-i18n="formNameLabel"></label>
+        <select id="goal-name-select" onchange="onGoalNameChange()"></select>
+        <input id="goal-name" data-i18n-placeholder="customNamePlaceholder" style="margin-top:6px;display:none;">
+      </div>
+      <div><label data-i18n="formTargetLabel"></label><input id="goal-target" type="number" step="0.01" placeholder="0.00"></div>
+      <div><label data-i18n="formSavedLabel"></label><input id="goal-saved" type="number" step="0.01" placeholder="0.00"></div>
+      <div><label data-i18n="formTargetDateLabel"></label><input id="goal-date" type="date"></div>
+      <button onclick="addGoal()" data-i18n="addBtn"></button>
+    </div>
+  </section>
+
+  <section id="budget-section" class="main-section">
+    <div class="h2-row"><span class="icon-badge i-orange">📊</span><h2 data-i18n="budgetTitle"></h2></div>
+    <div class="hint" data-i18n="budgetHint"></div>
+    <table>
+      <thead><tr>
+        <th data-i18n="colCategory"></th>
+        <th data-i18n="colBudget"></th>
+        <th data-i18n="colSpent"></th>
+        <th data-i18n="colRemaining"></th>
+        <th data-i18n="colUsage"></th>
+        <th data-i18n="colStatus"></th>
+        <th></th>
+      </tr></thead>
+      <tbody id="budget-rows"></tbody>
+    </table>
+    <div id="budget-showmore" class="show-more-row"></div>
+    <div class="cat-form">
+      <div><label data-i18n="colCategory"></label>
+        <select id="cat-name-select" onchange="onCatNameChange()"></select>
+        <input id="cat-name" data-i18n-placeholder="customCategoryPlaceholder" style="margin-top:6px;display:none;">
+      </div>
+      <div><label data-i18n="formMonthlyBudgetLabel"></label><input id="cat-budget" type="number" step="0.01" placeholder="0.00"></div>
+      <div></div><div></div>
+      <button onclick="addCategory()" data-i18n="addBtn"></button>
+    </div>
+  </section>
+
+  <section id="tx-section" class="main-section">
+    <div class="h2-row"><span class="icon-badge i-green">🧾</span><h2 data-i18n="txTitle"></h2></div>
+    <div class="hint" data-i18n="txHint"></div>
+    <table>
+      <thead><tr>
+        <th data-i18n="colDate"></th>
+        <th data-i18n="colType"></th>
+        <th data-i18n="colAmount"></th>
+        <th data-i18n="colAccount"></th>
+        <th data-i18n="colCategory"></th>
+        <th data-i18n="colNote"></th>
+        <th></th>
+      </tr></thead>
+      <tbody id="tx-rows"></tbody>
+    </table>
+    <div id="tx-showmore" class="show-more-row"></div>
+    <div class="row-form">
+      <div><label data-i18n="colDate"></label><input id="tx-date" type="date"></div>
+      <div><label data-i18n="colType"></label><select id="tx-type"><option value="income" data-i18n="typeIncome"></option><option value="expense" selected data-i18n="typeExpense"></option></select></div>
+      <div><label data-i18n="colAmount"></label><input id="tx-amount" type="number" step="0.01" placeholder="0.00"></div>
+      <div><label data-i18n="colAccount"></label><input id="tx-account" data-i18n-placeholder="accountPlaceholder"></div>
+      <div><label data-i18n="colCategory"></label><select id="tx-category"></select></div>
+      <div><label data-i18n="colNote"></label><input id="tx-note" data-i18n-placeholder="notePlaceholder"></div>
+      <button onclick="addTx()" data-i18n="addBtn"></button>
+    </div>
+  </section>
+
+  <div class="footer-note">
+    <span data-i18n="disclaimer"></span>
+    &nbsp;·&nbsp;<span class="reset-link" onclick="resetAll()" data-i18n="resetLink"></span>
+  </div>
+
+</main>
+
+<script>
+const STORAGE_KEY = 'pfp_data_v1';
+const CURRENCY_KEY = 'pfp_currency_v1';
+const LANG_KEY = 'pfp_lang_v1';
+
+function uid(){ return 'id_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,10); }
+
+const LANG_INDEX = { en:0, zh:1, de:2 };
+
+const STR = {
+  title:            { en:'Personal Finance Planner', zh:'个人财务规划表', de:'Finanzplaner' },
+  subtitle:         { en:'Track income & expenses, budgets and savings goals — all data stays on this device (localStorage).',
+                       zh:'追踪收支、预算与存款目标 — 所有数据只保存在本设备浏览器中。',
+                       de:'Einnahmen, Ausgaben, Budgets und Sparziele verfolgen — alle Daten bleiben lokal in diesem Browser.' },
+  chipPrivate:      { en:'100% Local & Private', zh:'100% 本地存储 · 保护隐私', de:'100% Lokal & Privat' },
+  chipNoAccount:    { en:'No Account Needed', zh:'无需注册账号', de:'Kein Konto nötig' },
+  currencyLabel:    { en:'Currency', zh:'货币', de:'Währung' },
+
+  goalsTitle:       { en:'Savings Goals', zh:'存款目标', de:'Sparziele' },
+  goalsHint:        { en:'Target — Saved — Progress', zh:'目标金额 — 已存 — 进度', de:'Zielbetrag — Gespart — Fortschritt' },
+  noGoals:          { en:'No goals yet', zh:'暂无目标', de:'Noch keine Ziele' },
+  targetDateInline: { en:'target date', zh:'目标日期', de:'Zieldatum' },
+  formNameLabel:    { en:'Name', zh:'名称', de:'Name' },
+  formTargetLabel:  { en:'Target', zh:'目标', de:'Ziel' },
+  formSavedLabel:   { en:'Saved', zh:'已存', de:'Gespart' },
+  formTargetDateLabel: { en:'Target date', zh:'目标日期', de:'Zieldatum' },
+  addBtn:           { en:'+ Add', zh:'+ 添加', de:'+ Hinzufügen' },
+  customNamePlaceholder: { en:'Custom name', zh:'自定义名称', de:'Eigener Name' },
+  customOption:     { en:'+ Custom', zh:'+ 自定义', de:'+ Benutzerdefiniert' },
+
+  budgetTitle:      { en:'Budget Categories', zh:'预算分类', de:'Budgetkategorien' },
+  budgetHint:       { en:'Status: OK (<80%) · near limit (80–100%) · over (>100%)',
+                       zh:'状态：正常 (<80%) · 接近上限 (80–100%) · 超支 (>100%)',
+                       de:'Status: OK (<80%) · Fast am Limit (80–100%) · Überschritten (>100%)' },
+  colCategory:      { en:'Category', zh:'分类', de:'Kategorie' },
+  colBudget:        { en:'Budget', zh:'月预算', de:'Monatsbudget' },
+  colSpent:         { en:'Spent', zh:'已花费', de:'Ausgegeben' },
+  colRemaining:     { en:'Remaining', zh:'剩余', de:'Verbleibend' },
+  colUsage:         { en:'Usage', zh:'使用率', de:'Auslastung' },
+  colStatus:        { en:'Status', zh:'状态', de:'Status' },
+  statusOK:         { en:'OK', zh:'正常', de:'OK' },
+  statusNear:       { en:'Near limit', zh:'接近上限', de:'Fast am Limit' },
+  statusOver:       { en:'Over', zh:'超支', de:'Überschritten' },
+  formMonthlyBudgetLabel: { en:'Monthly budget', zh:'月预算', de:'Monatsbudget' },
+  customCategoryPlaceholder: { en:'Custom category', zh:'自定义分类', de:'Eigene Kategorie' },
+
+  txTitle:          { en:'Transactions', zh:'收支记录', de:'Transaktionen' },
+  txHint:           { en:'Log every income / expense and link it to a category', zh:'登记每笔收支并关联分类', de:'Jede Buchung einer Kategorie zuordnen' },
+  colDate:          { en:'Date', zh:'日期', de:'Datum' },
+  colType:          { en:'Type', zh:'类型', de:'Typ' },
+  colAmount:        { en:'Amount', zh:'金额', de:'Betrag' },
+  colAccount:       { en:'Account', zh:'账户', de:'Konto' },
+  colNote:          { en:'Note', zh:'备注', de:'Notiz' },
+  typeIncome:       { en:'Income', zh:'收入', de:'Einnahme' },
+  typeExpense:      { en:'Expense', zh:'支出', de:'Ausgabe' },
+  accountPlaceholder: { en:'e.g. Checking', zh:'如：活期账户', de:'z. B. Girokonto' },
+  notePlaceholder:  { en:'optional', zh:'可选', de:'optional' },
+
+  disclaimer:       { en:'This tool only tracks the numbers you enter; it is not financial advice.',
+                       zh:'本工具仅为记账工具，不构成理财建议。',
+                       de:'Dieses Tool ist ein Erfassungswerkzeug, keine Finanzberatung.' },
+  resetLink:        { en:'Clear all data & reset', zh:'清除所有数据并重置', de:'Alle Daten löschen' },
+  resetConfirm:     { en:'Clear ALL data and start fresh (keeps the default category list)?',
+                       zh:'清除所有数据并重新开始（保留默认分类列表）？',
+                       de:'Alle Daten löschen und neu beginnen (Standardkategorien bleiben erhalten)?' },
+  showMore:         { en:'Show all {n} more', zh:'查看全部 {n} 项', de:'Alle {n} weitere anzeigen' },
+  showLess:         { en:'Show less', zh:'收起', de:'Weniger anzeigen' },
+  sampleTag:        { en:'Sample', zh:'示例', de:'Beispiel' },
+};
+
+let currentLang = localStorage.getItem(LANG_KEY) || 'en';
+
+function t(key){
+  const entry = STR[key];
+  return entry ? (entry[currentLang] || entry.en) : key;
+}
+
+function presetLabel(tuple){ return tuple[LANG_INDEX[currentLang]] || tuple[0]; }
+
+function lookupPresetLabel(presets, canonicalName){
+  const found = presets.find(p => p[0] === canonicalName);
+  return found ? presetLabel(found) : canonicalName;
+}
+
+function applyI18n(){
+  document.documentElement.lang = currentLang;
+  document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => { el.placeholder = t(el.dataset.i18nPlaceholder); });
+  document.querySelectorAll('#lang-switch .lang-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.lang === currentLang);
+  });
+}
+
+function setLang(lang){
+  currentLang = lang;
+  localStorage.setItem(LANG_KEY, lang);
+  applyI18n();
+  renderAll();
+}
+
+const DEFAULT_CATEGORIES = [
+  'Housing / Rent','Groceries','Transport','Utilities','Insurance','Dining Out',
+  'Entertainment','Health & Medical','Education','Shopping','Savings','Travel','Other'
+].map(name => ({ id: uid(), name, budget: 0, sample: false }));
+
+const SAMPLE_TX = [];
+
+const SAMPLE_GOALS = [];
+
+function todayISO(){ return new Date().toISOString().slice(0,10); }
+
+const GOAL_NAME_PRESETS = [
+  ['Emergency Fund','应急基金','Notgroschen'],
+  ['Vacation / Travel','旅行基金','Urlaub / Reise'],
+  ['New Car','购车基金','Neues Auto'],
+  ['Home Down Payment','购房首付','Eigenheim Anzahlung'],
+  ['Home Renovation','装修基金','Renovierung'],
+  ['Wedding','婚礼基金','Hochzeit'],
+  ['Education Fund','教育基金','Bildungsfonds'],
+  ['Retirement','退休基金','Altersvorsorge'],
+  ['New Gadget / Electronics','数码产品','Elektronik'],
+  ['Debt Payoff','还债基金','Schuldentilgung'],
+  ['Baby / Family Fund','育儿基金','Familienfonds'],
+  ['Business Investment','创业基金','Geschäftsinvestition'],
+  ['Health / Medical Fund','医疗基金','Gesundheitsfonds'],
+  ['Gift Fund','礼物基金','Geschenke'],
+];
+
+const CATEGORY_PRESETS = [
+  ['Housing / Rent','房租/房贷','Miete/Hypothek'],
+  ['Groceries','日常食品','Lebensmittel'],
+  ['Transport','交通','Transport'],
+  ['Fuel','燃油','Kraftstoff'],
+  ['Public Transit','公共交通','ÖPNV'],
+  ['Utilities','水电燃气','Nebenkosten'],
+  ['Electricity','电费','Strom'],
+  ['Internet & Phone','网络电话','Internet & Telefon'],
+  ['Insurance','保险','Versicherung'],
+  ['Health Insurance','医疗保险','Krankenversicherung'],
+  ['Dining Out','外出就餐','Auswärts essen'],
+  ['Entertainment','娱乐','Unterhaltung'],
+  ['Subscriptions','订阅服务','Abonnements'],
+  ['Health & Medical','医疗健康','Gesundheit'],
+  ['Fitness','健身','Fitness'],
+  ['Education','教育','Bildung'],
+  ['Childcare','育儿托管','Kinderbetreuung'],
+  ['Pets','宠物','Haustiere'],
+  ['Shopping','购物','Einkaufen'],
+  ['Clothing','服饰','Kleidung'],
+  ['Personal Care','个人护理','Körperpflege'],
+  ['Savings','储蓄','Sparen'],
+  ['Investments','投资','Investitionen'],
+  ['Travel','旅行','Reisen'],
+  ['Gifts & Donations','礼物捐赠','Geschenke & Spenden'],
+  ['Taxes','税费','Steuern'],
+  ['Debt Repayment','还贷','Schuldentilgung'],
+  ['Business Expenses','业务支出','Geschäftsausgaben'],
+  ['Household Supplies','家庭用品','Haushaltsartikel'],
+  ['Other','其他','Sonstiges'],
+];
+
+function buildPresetSelect(selectEl, presets){
+  const prevValue = selectEl.value;
+  const options = presets.map(tuple =>
+    `<option value="${esc(tuple[0])}">${esc(presetLabel(tuple))}</option>`).join('');
+  selectEl.innerHTML = options + `<option value="__custom__">${esc(t('customOption'))}</option>`;
+  if(prevValue && [...selectEl.options].some(o => o.value === prevValue)) selectEl.value = prevValue;
+}
+
+function onGoalNameChange(){
+  const sel = document.getElementById('goal-name-select');
+  const custom = document.getElementById('goal-name');
+  const isCustom = sel.value === '__custom__';
+  custom.style.display = isCustom ? 'block' : 'none';
+  if(!isCustom) custom.value = '';
+}
+function onCatNameChange(){
+  const sel = document.getElementById('cat-name-select');
+  const custom = document.getElementById('cat-name');
+  const isCustom = sel.value === '__custom__';
+  custom.style.display = isCustom ? 'block' : 'none';
+  if(!isCustom) custom.value = '';
+}
+function selectedOrCustom(selectId, inputId){
+  const sel = document.getElementById(selectId).value;
+  if(sel === '__custom__') return document.getElementById(inputId).value.trim();
+  return sel;
+}
+
+function loadData(){
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if(raw){
+    try { return JSON.parse(raw); } catch(e){ /* fall through */ }
+  }
+  const seeded = { categories: DEFAULT_CATEGORIES, transactions: SAMPLE_TX, goals: SAMPLE_GOALS };
+  saveData(seeded);
+  return seeded;
+}
+function saveData(d){ localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); }
+
+let data = loadData();
+
+function resetAll(){
+  if(!confirm(t('resetConfirm'))) return;
+  localStorage.removeItem(STORAGE_KEY);
+  data = loadData();
+  renderAll();
+}
+
+function categoryOptions(selected){
+  return data.categories.map(c => `<option value="${esc(c.name)}" ${c.name===selected?'selected':''}>${esc(lookupPresetLabel(CATEGORY_PRESETS, c.name))}</option>`).join('');
+}
+
+function esc(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+const CURRENCIES = {
+  CHF: { symbol:'CHF', name:['Swiss Franc','瑞郎','Schweizer Franken'] },
+  EUR: { symbol:'€',   name:['Euro','欧元','Euro'] },
+  USD: { symbol:'$',   name:['US Dollar','美元','US-Dollar'] },
+  CNY: { symbol:'¥',   name:['Renminbi','人民币','Renminbi'] },
+  GBP: { symbol:'£',   name:['British Pound','英镑','Britisches Pfund'] },
+};
+let currentCurrency = localStorage.getItem(CURRENCY_KEY) || 'CHF';
+
+function setCurrency(code){
+  currentCurrency = code;
+  localStorage.setItem(CURRENCY_KEY, code);
+  renderAll();
+}
+
+function money(n){
+  const sym = CURRENCIES[currentCurrency].symbol;
+  return `${sym} ${(Number(n)||0).toFixed(2)}`;
+}
+
+function spentByCategory(catName){
+  return data.transactions
+    .filter(t => t.type==='expense' && t.category===catName)
+    .reduce((sum,t)=> sum + Number(t.amount||0), 0);
+}
+
+const PAGE_SIZE = 3;
+const expanded = { budget:false, tx:false, goals:false };
+
+function toggleExpand(key){
+  expanded[key] = !expanded[key];
+  renderAll();
+}
+
+function renderShowMore(key, containerId, totalCount){
+  const el = document.getElementById(containerId);
+  if(!el) return;
+  if(totalCount <= PAGE_SIZE){ el.innerHTML = ''; return; }
+  const isOpen = expanded[key];
+  const label = isOpen ? t('showLess') : t('showMore').replace('{n}', totalCount - PAGE_SIZE);
+  el.innerHTML = `<button class="show-more-btn" onclick="toggleExpand('${key}')">${esc(label)}</button>`;
+}
+
+function renderBudget(){
+  const tbody = document.getElementById('budget-rows');
+  const list = expanded.budget ? data.categories : data.categories.slice(0, PAGE_SIZE);
+  tbody.innerHTML = list.map(c => {
+    const spent = spentByCategory(c.name);
+    const remaining = c.budget - spent;
+    const pct = c.budget > 0 ? Math.round((spent / c.budget) * 100) : 0;
+    let statusClass='ok', statusLabel=t('statusOK');
+    if(pct > 100){ statusClass='bad'; statusLabel=t('statusOver'); }
+    else if(pct >= 80){ statusClass='warn'; statusLabel=t('statusNear'); }
+    const barColor = statusClass==='bad' ? 'var(--bad)' : statusClass==='warn' ? 'var(--warn)' : 'var(--ok)';
+    return `<tr class="${c.sample?'sample':''}">
+      <td>${esc(lookupPresetLabel(CATEGORY_PRESETS, c.name))}${c.sample?`<span class="tag-sample">${esc(t('sampleTag'))}</span>`:''}</td>
+      <td>${money(c.budget)}</td>
+      <td>${money(spent)}</td>
+      <td>${money(remaining)}</td>
+      <td><div class="bar-wrap"><div class="bar" style="width:${Math.min(pct,100)}%;background:${barColor}"></div></div> ${pct}%</td>
+      <td><span class="status ${statusClass}">${esc(statusLabel)}</span></td>
+      <td><button class="del" onclick="deleteCategory('${c.id}')" title="Delete">✕</button></td>
+    </tr>`;
+  }).join('');
+  renderShowMore('budget', 'budget-showmore', data.categories.length);
+}
+
+function renderTx(){
+  const tbody = document.getElementById('tx-rows');
+  const list = expanded.tx ? data.transactions : data.transactions.slice(0, PAGE_SIZE);
+  tbody.innerHTML = list.map(tx => `
+    <tr class="${tx.sample?'sample':''}">
+      <td>${esc(tx.date)}</td>
+      <td>${tx.type==='income' ? esc(t('typeIncome')) : esc(t('typeExpense'))}</td>
+      <td style="color:${tx.type==='income'?'var(--ok)':'var(--bad)'}">${tx.type==='income'?'+':'-'}${money(tx.amount)}</td>
+      <td>${esc(tx.account||'')}</td>
+      <td>${esc(lookupPresetLabel(CATEGORY_PRESETS, tx.category))}</td>
+      <td>${esc(tx.note||'')}${tx.sample?`<span class="tag-sample">${esc(t('sampleTag'))}</span>`:''}</td>
+      <td><button class="del" onclick="deleteTx('${tx.id}')" title="Delete">✕</button></td>
+    </tr>`).join('');
+  document.getElementById('tx-category').innerHTML = categoryOptions();
+  renderShowMore('tx', 'tx-showmore', data.transactions.length);
+}
+
+function renderGoals(){
+  const listEl = document.getElementById('goals-list');
+  if(data.goals.length === 0){
+    listEl.innerHTML = `<div class="hint">${esc(t('noGoals'))}</div>`;
+    renderShowMore('goals', 'goals-showmore', 0);
+    return;
+  }
+  const list = expanded.goals ? data.goals : data.goals.slice(0, PAGE_SIZE);
+  listEl.innerHTML = list.map(g => {
+    const pct = g.target > 0 ? Math.min(Math.round((g.saved / g.target) * 100), 100) : 0;
+    return `<div class="goal-card">
+      <div>
+        <div class="goal-title">${esc(lookupPresetLabel(GOAL_NAME_PRESETS, g.name))}${g.sample?`<span class="tag-sample">${esc(t('sampleTag'))}</span>`:''}</div>
+        <div class="goal-meta">${money(g.saved)} / ${money(g.target)} · ${esc(t('targetDateInline'))}: ${esc(g.date||'-')}</div>
+        <div class="bar-wrap" style="width:220px;margin-top:6px;"><div class="bar" style="width:${pct}%;background:var(--accent)"></div></div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-weight:700;color:var(--accent);">${pct}%</div>
+        <button class="del" onclick="deleteGoal('${g.id}')" title="Delete">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+  renderShowMore('goals', 'goals-showmore', data.goals.length);
+}
+
+function renderAll(){
+  renderBudget(); renderTx(); renderGoals();
+  buildPresetSelect(document.getElementById('goal-name-select'), GOAL_NAME_PRESETS);
+  buildPresetSelect(document.getElementById('cat-name-select'), CATEGORY_PRESETS);
+  onGoalNameChange(); onCatNameChange();
+  const curSel = document.getElementById('currency-select');
+  if(curSel){
+    const prevValue = curSel.value;
+    curSel.innerHTML = Object.entries(CURRENCIES).map(([code,c]) =>
+      `<option value="${code}">${code} · ${esc(presetLabel(c.name))} (${c.symbol})</option>`).join('');
+    curSel.value = prevValue && CURRENCIES[prevValue] ? prevValue : currentCurrency;
+  }
+}
+
+function addCategory(){
+  const name = selectedOrCustom('cat-name-select','cat-name');
+  const budget = parseFloat(document.getElementById('cat-budget').value) || 0;
+  if(!name) return;
+  data.categories.push({ id: uid(), name, budget, sample:false });
+  saveData(data);
+  document.getElementById('cat-name').value='';
+  document.getElementById('cat-budget').value='';
+  document.getElementById('cat-name-select').selectedIndex = 0;
+  onCatNameChange();
+  renderAll();
+}
+function deleteCategory(id){
+  data.categories = data.categories.filter(c => c.id !== id);
+  saveData(data); renderAll();
+}
+
+function addTx(){
+  const date = document.getElementById('tx-date').value || todayISO();
+  const type = document.getElementById('tx-type').value;
+  const amount = parseFloat(document.getElementById('tx-amount').value);
+  const account = document.getElementById('tx-account').value.trim();
+  const category = document.getElementById('tx-category').value;
+  const note = document.getElementById('tx-note').value.trim();
+  if(!amount || amount <= 0) return;
+  data.transactions.unshift({ id: uid(), date, type, amount, account, category, note, sample:false });
+  saveData(data);
+  ['tx-amount','tx-account','tx-note'].forEach(id => document.getElementById(id).value='');
+  renderAll();
+}
+function deleteTx(id){
+  data.transactions = data.transactions.filter(t => t.id !== id);
+  saveData(data); renderAll();
+}
+
+function addGoal(){
+  const name = selectedOrCustom('goal-name-select','goal-name');
+  const target = parseFloat(document.getElementById('goal-target').value) || 0;
+  const saved = parseFloat(document.getElementById('goal-saved').value) || 0;
+  const date = document.getElementById('goal-date').value;
+  if(!name || target <= 0) return;
+  data.goals.push({ id: uid(), name, target, saved, date, sample:false });
+  saveData(data);
+  ['goal-name','goal-target','goal-saved','goal-date'].forEach(id => document.getElementById(id).value='');
+  document.getElementById('goal-name-select').selectedIndex = 0;
+  onGoalNameChange();
+  renderAll();
+}
+function deleteGoal(id){
+  data.goals = data.goals.filter(g => g.id !== id);
+  saveData(data); renderAll();
+}
+
+applyI18n();
+renderAll();
+</script>
+</body>
+</html>
