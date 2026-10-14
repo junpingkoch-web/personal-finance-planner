@@ -52,6 +52,10 @@
   .period-bar{flex-wrap:wrap;}
   .period-bar select{width:auto;min-width:0;}
 
+  .action-bar{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;}
+  .action-btn{background:#fff;color:var(--ink);border:1px solid var(--line);font-weight:700;font-size:12.5px;padding:8px 16px;border-radius:999px;box-shadow:0 1px 4px rgba(26,33,64,.06);}
+  .action-btn:hover{background:#f6f3ff;}
+
   .lang-switch{display:inline-flex;gap:4px;background:#fff;border-radius:999px;padding:4px;box-shadow:0 1px 4px rgba(26,33,64,.08);}
   .lang-btn{background:none;color:var(--sub);font-size:12px;font-weight:700;padding:6px 14px;border-radius:999px;}
   .lang-btn:hover{background:#f1eeff;}
@@ -115,6 +119,17 @@
     table{display:block;overflow-x:auto;white-space:nowrap;}
     .goal-form, .cat-form, .row-form{grid-template-columns:1fr;}
   }
+
+  @media print{
+    body{background:#fff;}
+    header{background:none;box-shadow:none;}
+    header::before, header::after, .hero-dots{display:none;}
+    .lang-switch, .currency-bar, .action-bar, .chips{display:none;}
+    .goal-form, .cat-form, .row-form, .show-more-row, .del, section button{display:none;}
+    .main-section{min-height:0;break-inside:avoid;box-shadow:none;border:1px solid #ccc;}
+    main{padding:0;gap:14px;}
+    a[href]::after{content:none;}
+  }
 </style>
 </head>
 <body>
@@ -142,6 +157,10 @@
       <select id="period-year-select" onchange="onPeriodFieldChange()"></select>
       <select id="period-month-select" onchange="onPeriodFieldChange()"></select>
       <select id="period-xun-select" onchange="onPeriodFieldChange()"></select>
+    </div>
+    <div class="action-bar">
+      <button class="action-btn" onclick="printReport()">🖨️ <span data-i18n="printBtn"></span></button>
+      <button class="action-btn" onclick="saveDocument()">💾 <span data-i18n="saveDocBtn"></span></button>
     </div>
   </div>
 </header>
@@ -252,6 +271,10 @@ const STR = {
   xun1:             { en:'1st third (Day 1–10)', zh:'上旬（1–10日）', de:'1. Dekade (Tag 1–10)' },
   xun2:             { en:'2nd third (Day 11–20)', zh:'中旬（11–20日）', de:'2. Dekade (Tag 11–20)' },
   xun3:             { en:'3rd third (Day 21–end)', zh:'下旬（21日–月末）', de:'3. Dekade (Tag 21–Monatsende)' },
+
+  printBtn:         { en:'Print', zh:'打印', de:'Drucken' },
+  saveDocBtn:       { en:'Save Document', zh:'保存文档', de:'Dokument speichern' },
+  exportedAt:       { en:'Exported', zh:'导出时间', de:'Exportiert am' },
 
   goalsTitle:       { en:'Savings Goals', zh:'存款目标', de:'Sparziele' },
   goalsHint:        { en:'Target — Saved — Progress', zh:'目标金额 — 已存 — 进度', de:'Zielbetrag — Gespart — Fortschritt' },
@@ -715,6 +738,61 @@ function addGoal(){
 function deleteGoal(id){
   data.goals = data.goals.filter(g => g.id !== id);
   saveData(data); renderAll();
+}
+
+function withFullyExpanded(fn){
+  const prev = { ...expanded };
+  expanded.budget = expanded.tx = expanded.goals = true;
+  renderAll();
+  fn();
+  Object.assign(expanded, prev);
+  renderAll();
+}
+
+function printReport(){
+  withFullyExpanded(() => { window.print(); });
+}
+
+function buildSnapshotHTML(){
+  const styleTag = document.querySelector('style').outerHTML;
+  const mainClone = document.querySelector('main').cloneNode(true);
+  mainClone.querySelectorAll('.goal-form, .cat-form, .row-form, .show-more-row, button').forEach(el => el.remove());
+  const locale = currentLang === 'zh' ? 'zh-CN' : currentLang === 'de' ? 'de-DE' : 'en-US';
+  const generatedAt = new Date().toLocaleString(locale);
+  return `<!DOCTYPE html>
+<html lang="${currentLang}">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${esc(t('title'))} – ${esc(todayISO())}</title>
+${styleTag}
+</head>
+<body>
+<header style="padding:24px 20px;">
+  <div class="hero-wrap">
+    <h1>${esc(t('title'))}</h1>
+    <div class="sub">${esc(t('subtitle'))}</div>
+    <div class="sub" style="margin-top:6px;">${esc(t('exportedAt'))}: ${esc(generatedAt)}</div>
+  </div>
+</header>
+<main>${mainClone.innerHTML}</main>
+</body>
+</html>`;
+}
+
+function saveDocument(){
+  withFullyExpanded(() => {
+    const html = buildSnapshotHTML();
+    const blob = new Blob([html], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `personal-finance-planner-${todayISO()}.html`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  });
 }
 
 applyI18n();
