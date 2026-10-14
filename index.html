@@ -163,7 +163,7 @@
       <select id="period-type-select" onchange="onPeriodTypeChange()"></select>
       <select id="period-year-select" onchange="onPeriodFieldChange()"></select>
       <select id="period-month-select" onchange="onPeriodFieldChange()"></select>
-      <select id="period-xun-select" onchange="onPeriodFieldChange()"></select>
+      <select id="period-quarter-select" onchange="onPeriodFieldChange()"></select>
     </div>
   </div>
 </header>
@@ -270,10 +270,11 @@ const STR = {
   periodAll:        { en:'All Time', zh:'全部时间', de:'Gesamter Zeitraum' },
   periodYear:       { en:'Year', zh:'按年', de:'Jahr' },
   periodMonth:      { en:'Month', zh:'按月', de:'Monat' },
-  periodXun:        { en:'10-Day (旬)', zh:'按旬', de:'Dekade (10 Tage)' },
-  xun1:             { en:'1st third (Day 1–10)', zh:'上旬（1–10日）', de:'1. Dekade (Tag 1–10)' },
-  xun2:             { en:'2nd third (Day 11–20)', zh:'中旬（11–20日）', de:'2. Dekade (Tag 11–20)' },
-  xun3:             { en:'3rd third (Day 21–end)', zh:'下旬（21日–月末）', de:'3. Dekade (Tag 21–Monatsende)' },
+  periodQuarter:    { en:'Quarter', zh:'按季度', de:'Quartal' },
+  quarter1:         { en:'Q1 (Jan–Mar)', zh:'第1季度（1–3月）', de:'Q1 (Jan–Mär)' },
+  quarter2:         { en:'Q2 (Apr–Jun)', zh:'第2季度（4–6月）', de:'Q2 (Apr–Jun)' },
+  quarter3:         { en:'Q3 (Jul–Sep)', zh:'第3季度（7–9月）', de:'Q3 (Jul–Sep)' },
+  quarter4:         { en:'Q4 (Oct–Dec)', zh:'第4季度（10–12月）', de:'Q4 (Okt–Dez)' },
 
   printBtn:         { en:'Print', zh:'打印', de:'Drucken' },
   saveDocBtn:       { en:'Save Document', zh:'保存文档', de:'Dokument speichern' },
@@ -504,7 +505,7 @@ let planPeriod = (() => {
     const raw = JSON.parse(localStorage.getItem(PERIOD_KEY));
     if(raw && raw.type) return raw;
   } catch(e){}
-  return { type:'all', year: now.getFullYear(), month: now.getMonth()+1, xun: 1 };
+  return { type:'all', year: now.getFullYear(), month: now.getMonth()+1, quarter: Math.floor(now.getMonth()/3)+1 };
 })();
 
 function savePeriod(){ localStorage.setItem(PERIOD_KEY, JSON.stringify(planPeriod)); }
@@ -515,15 +516,14 @@ function getPeriodRange(){
   if(planPeriod.type === 'year'){
     return { start: new Date(y,0,1), end: new Date(y,11,31,23,59,59) };
   }
-  const m = planPeriod.month - 1;
   if(planPeriod.type === 'month'){
+    const m = planPeriod.month - 1;
     return { start: new Date(y,m,1), end: new Date(y,m+1,0,23,59,59) };
   }
-  if(planPeriod.type === 'xun'){
-    const lastDay = new Date(y,m+1,0).getDate();
-    const ranges = { 1:[1,10], 2:[11,20], 3:[21,lastDay] };
-    const [d1,d2] = ranges[planPeriod.xun] || ranges[1];
-    return { start: new Date(y,m,d1), end: new Date(y,m,d2,23,59,59) };
+  if(planPeriod.type === 'quarter'){
+    const q = planPeriod.quarter || 1;
+    const startMonth = (q-1)*3;
+    return { start: new Date(y,startMonth,1), end: new Date(y,startMonth+3,0,23,59,59) };
   }
   return null;
 }
@@ -546,12 +546,12 @@ function buildPeriodControls(){
   const typeSel = document.getElementById('period-type-select');
   const yearSel = document.getElementById('period-year-select');
   const monthSel = document.getElementById('period-month-select');
-  const xunSel = document.getElementById('period-xun-select');
+  const quarterSel = document.getElementById('period-quarter-select');
   if(!typeSel) return;
 
-  typeSel.innerHTML = ['all','year','month','xun'].map(type =>
+  typeSel.innerHTML = ['all','year','month','quarter'].map(type =>
     `<option value="${type}" ${planPeriod.type===type?'selected':''}>${esc(t(
-      type==='all'?'periodAll':type==='year'?'periodYear':type==='month'?'periodMonth':'periodXun'
+      type==='all'?'periodAll':type==='year'?'periodYear':type==='month'?'periodMonth':'periodQuarter'
     ))}</option>`).join('');
 
   yearSel.innerHTML = periodYears().map(y =>
@@ -560,12 +560,12 @@ function buildPeriodControls(){
   monthSel.innerHTML = Array.from({length:12}, (_,i) => i+1).map(m =>
     `<option value="${m}" ${planPeriod.month===m?'selected':''}>${m}</option>`).join('');
 
-  xunSel.innerHTML = [1,2,3].map(x =>
-    `<option value="${x}" ${planPeriod.xun===x?'selected':''}>${esc(t('xun'+x))}</option>`).join('');
+  quarterSel.innerHTML = [1,2,3,4].map(q =>
+    `<option value="${q}" ${planPeriod.quarter===q?'selected':''}>${esc(t('quarter'+q))}</option>`).join('');
 
-  yearSel.style.display = (planPeriod.type==='year'||planPeriod.type==='month'||planPeriod.type==='xun') ? '' : 'none';
-  monthSel.style.display = (planPeriod.type==='month'||planPeriod.type==='xun') ? '' : 'none';
-  xunSel.style.display = planPeriod.type==='xun' ? '' : 'none';
+  yearSel.style.display = (planPeriod.type==='year'||planPeriod.type==='month'||planPeriod.type==='quarter') ? '' : 'none';
+  monthSel.style.display = planPeriod.type==='month' ? '' : 'none';
+  quarterSel.style.display = planPeriod.type==='quarter' ? '' : 'none';
 }
 
 function onPeriodTypeChange(){
@@ -576,7 +576,7 @@ function onPeriodTypeChange(){
 function onPeriodFieldChange(){
   planPeriod.year = parseInt(document.getElementById('period-year-select').value,10) || now.getFullYear();
   planPeriod.month = parseInt(document.getElementById('period-month-select').value,10) || 1;
-  planPeriod.xun = parseInt(document.getElementById('period-xun-select').value,10) || 1;
+  planPeriod.quarter = parseInt(document.getElementById('period-quarter-select').value,10) || 1;
   savePeriod();
   renderAll();
 }
