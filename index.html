@@ -48,6 +48,8 @@
     display:flex;align-items:center;gap:8px;margin-top:20px;font-size:12px;font-weight:600;color:var(--sub);
   }
   .currency-bar select{width:auto;min-width:200px;font-weight:700;color:var(--ink);background:#fff;}
+  .period-bar{flex-wrap:wrap;}
+  .period-bar select{width:auto;min-width:0;}
 
   .lang-switch{display:inline-flex;gap:4px;background:#fff;border-radius:999px;padding:4px;box-shadow:0 1px 4px rgba(26,33,64,.08);}
   .lang-btn{background:none;color:var(--sub);font-size:12px;font-weight:700;padding:6px 14px;border-radius:999px;}
@@ -132,6 +134,13 @@
     <div class="currency-bar">
       <span data-i18n="currencyLabel"></span>
       <select id="currency-select" onchange="setCurrency(this.value)"></select>
+    </div>
+    <div class="currency-bar period-bar">
+      <span data-i18n="planningPeriod"></span>
+      <select id="period-type-select" onchange="onPeriodTypeChange()"></select>
+      <select id="period-year-select" onchange="onPeriodFieldChange()"></select>
+      <select id="period-month-select" onchange="onPeriodFieldChange()"></select>
+      <select id="period-xun-select" onchange="onPeriodFieldChange()"></select>
     </div>
   </div>
 </header>
@@ -234,6 +243,15 @@ const STR = {
   chipNoAccount:    { en:'No Account Needed', zh:'无需注册账号', de:'Kein Konto nötig' },
   currencyLabel:    { en:'Currency', zh:'货币', de:'Währung' },
 
+  planningPeriod:   { en:'Planning Period', zh:'规划周期', de:'Planungszeitraum' },
+  periodAll:        { en:'All Time', zh:'全部时间', de:'Gesamter Zeitraum' },
+  periodYear:       { en:'Year', zh:'按年', de:'Jahr' },
+  periodMonth:      { en:'Month', zh:'按月', de:'Monat' },
+  periodXun:        { en:'10-Day (旬)', zh:'按旬', de:'Dekade (10 Tage)' },
+  xun1:             { en:'1st third (Day 1–10)', zh:'上旬（1–10日）', de:'1. Dekade (Tag 1–10)' },
+  xun2:             { en:'2nd third (Day 11–20)', zh:'中旬（11–20日）', de:'2. Dekade (Tag 11–20)' },
+  xun3:             { en:'3rd third (Day 21–end)', zh:'下旬（21日–月末）', de:'3. Dekade (Tag 21–Monatsende)' },
+
   goalsTitle:       { en:'Savings Goals', zh:'存款目标', de:'Sparziele' },
   goalsHint:        { en:'Target — Saved — Progress', zh:'目标金额 — 已存 — 进度', de:'Zielbetrag — Gespart — Fortschritt' },
   noGoals:          { en:'No goals yet', zh:'暂无目标', de:'Noch keine Ziele' },
@@ -273,6 +291,7 @@ const STR = {
   typeExpense:      { en:'Expense', zh:'支出', de:'Ausgabe' },
   accountPlaceholder: { en:'e.g. Checking', zh:'如：活期账户', de:'z. B. Girokonto' },
   notePlaceholder:  { en:'optional', zh:'可选', de:'optional' },
+  noTxInPeriod:     { en:'No transactions in this period', zh:'该周期内暂无收支记录', de:'Keine Transaktionen in diesem Zeitraum' },
 
   disclaimer:       { en:'This tool only tracks the numbers you enter; it is not financial advice.',
                        zh:'本工具仅为记账工具，不构成理财建议。',
@@ -451,9 +470,93 @@ function money(n){
   return `${sym} ${(Number(n)||0).toFixed(2)}`;
 }
 
+const PERIOD_KEY = 'pfp_period_v1';
+const now = new Date();
+let planPeriod = (() => {
+  try {
+    const raw = JSON.parse(localStorage.getItem(PERIOD_KEY));
+    if(raw && raw.type) return raw;
+  } catch(e){}
+  return { type:'all', year: now.getFullYear(), month: now.getMonth()+1, xun: 1 };
+})();
+
+function savePeriod(){ localStorage.setItem(PERIOD_KEY, JSON.stringify(planPeriod)); }
+
+function getPeriodRange(){
+  if(planPeriod.type === 'all') return null;
+  const y = planPeriod.year;
+  if(planPeriod.type === 'year'){
+    return { start: new Date(y,0,1), end: new Date(y,11,31,23,59,59) };
+  }
+  const m = planPeriod.month - 1;
+  if(planPeriod.type === 'month'){
+    return { start: new Date(y,m,1), end: new Date(y,m+1,0,23,59,59) };
+  }
+  if(planPeriod.type === 'xun'){
+    const lastDay = new Date(y,m+1,0).getDate();
+    const ranges = { 1:[1,10], 2:[11,20], 3:[21,lastDay] };
+    const [d1,d2] = ranges[planPeriod.xun] || ranges[1];
+    return { start: new Date(y,m,d1), end: new Date(y,m,d2,23,59,59) };
+  }
+  return null;
+}
+
+function inPeriod(dateStr){
+  const range = getPeriodRange();
+  if(!range || !dateStr) return true;
+  const d = new Date(dateStr+'T00:00:00');
+  return d >= range.start && d <= range.end;
+}
+
+function periodYears(){
+  const years = new Set(data.transactions.map(t => parseInt(t.date,10)).filter(y => !isNaN(y)));
+  years.add(now.getFullYear());
+  years.add(planPeriod.year);
+  return [...years].sort((a,b) => b-a);
+}
+
+function buildPeriodControls(){
+  const typeSel = document.getElementById('period-type-select');
+  const yearSel = document.getElementById('period-year-select');
+  const monthSel = document.getElementById('period-month-select');
+  const xunSel = document.getElementById('period-xun-select');
+  if(!typeSel) return;
+
+  typeSel.innerHTML = ['all','year','month','xun'].map(type =>
+    `<option value="${type}" ${planPeriod.type===type?'selected':''}>${esc(t(
+      type==='all'?'periodAll':type==='year'?'periodYear':type==='month'?'periodMonth':'periodXun'
+    ))}</option>`).join('');
+
+  yearSel.innerHTML = periodYears().map(y =>
+    `<option value="${y}" ${planPeriod.year===y?'selected':''}>${y}</option>`).join('');
+
+  monthSel.innerHTML = Array.from({length:12}, (_,i) => i+1).map(m =>
+    `<option value="${m}" ${planPeriod.month===m?'selected':''}>${m}</option>`).join('');
+
+  xunSel.innerHTML = [1,2,3].map(x =>
+    `<option value="${x}" ${planPeriod.xun===x?'selected':''}>${esc(t('xun'+x))}</option>`).join('');
+
+  yearSel.style.display = (planPeriod.type==='year'||planPeriod.type==='month'||planPeriod.type==='xun') ? '' : 'none';
+  monthSel.style.display = (planPeriod.type==='month'||planPeriod.type==='xun') ? '' : 'none';
+  xunSel.style.display = planPeriod.type==='xun' ? '' : 'none';
+}
+
+function onPeriodTypeChange(){
+  planPeriod.type = document.getElementById('period-type-select').value;
+  savePeriod();
+  renderAll();
+}
+function onPeriodFieldChange(){
+  planPeriod.year = parseInt(document.getElementById('period-year-select').value,10) || now.getFullYear();
+  planPeriod.month = parseInt(document.getElementById('period-month-select').value,10) || 1;
+  planPeriod.xun = parseInt(document.getElementById('period-xun-select').value,10) || 1;
+  savePeriod();
+  renderAll();
+}
+
 function spentByCategory(catName){
   return data.transactions
-    .filter(t => t.type==='expense' && t.category===catName)
+    .filter(t => t.type==='expense' && t.category===catName && inPeriod(t.date))
     .reduce((sum,t)=> sum + Number(t.amount||0), 0);
 }
 
@@ -500,19 +603,24 @@ function renderBudget(){
 
 function renderTx(){
   const tbody = document.getElementById('tx-rows');
-  const list = expanded.tx ? data.transactions : data.transactions.slice(0, PAGE_SIZE);
-  tbody.innerHTML = list.map(tx => `
-    <tr class="${tx.sample?'sample':''}">
-      <td>${esc(tx.date)}</td>
-      <td>${tx.type==='income' ? esc(t('typeIncome')) : esc(t('typeExpense'))}</td>
-      <td style="color:${tx.type==='income'?'var(--ok)':'var(--bad)'}">${tx.type==='income'?'+':'-'}${money(tx.amount)}</td>
-      <td>${esc(tx.account||'')}</td>
-      <td>${esc(lookupPresetLabel(CATEGORY_PRESETS, tx.category))}</td>
-      <td>${esc(tx.note||'')}${tx.sample?`<span class="tag-sample">${esc(t('sampleTag'))}</span>`:''}</td>
-      <td><button class="del" onclick="deleteTx('${tx.id}')" title="Delete">✕</button></td>
-    </tr>`).join('');
+  const periodTx = data.transactions.filter(tx => inPeriod(tx.date));
+  const list = expanded.tx ? periodTx : periodTx.slice(0, PAGE_SIZE);
+  if(periodTx.length === 0){
+    tbody.innerHTML = `<tr><td colspan="7" class="hint" style="padding:14px 6px;">${esc(t('noTxInPeriod'))}</td></tr>`;
+  } else {
+    tbody.innerHTML = list.map(tx => `
+      <tr class="${tx.sample?'sample':''}">
+        <td>${esc(tx.date)}</td>
+        <td>${tx.type==='income' ? esc(t('typeIncome')) : esc(t('typeExpense'))}</td>
+        <td style="color:${tx.type==='income'?'var(--ok)':'var(--bad)'}">${tx.type==='income'?'+':'-'}${money(tx.amount)}</td>
+        <td>${esc(tx.account||'')}</td>
+        <td>${esc(lookupPresetLabel(CATEGORY_PRESETS, tx.category))}</td>
+        <td>${esc(tx.note||'')}${tx.sample?`<span class="tag-sample">${esc(t('sampleTag'))}</span>`:''}</td>
+        <td><button class="del" onclick="deleteTx('${tx.id}')" title="Delete">✕</button></td>
+      </tr>`).join('');
+  }
   document.getElementById('tx-category').innerHTML = categoryOptions();
-  renderShowMore('tx', 'tx-showmore', data.transactions.length);
+  renderShowMore('tx', 'tx-showmore', periodTx.length);
 }
 
 function renderGoals(){
@@ -541,6 +649,7 @@ function renderGoals(){
 }
 
 function renderAll(){
+  buildPeriodControls();
   renderBudget(); renderTx(); renderGoals();
   buildPresetSelect(document.getElementById('goal-name-select'), GOAL_NAME_PRESETS);
   buildPresetSelect(document.getElementById('cat-name-select'), CATEGORY_PRESETS);
